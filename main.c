@@ -1,7 +1,8 @@
-#include<stdio.h>
+#include <stdio.h>
+#include <conio.h>
 #include <stdlib.h>
 #include <time.h>
-#include <math.h>
+//#include <math.h>
 #include <float.h>
 
 #include "Def.h"
@@ -13,7 +14,8 @@
 #define TAX_MUT 0.25
 #define TEMPO_PRED 10
 
-#define tam_fila(F) (tamanho_fila(F) + (rand() % 3))		//Tamanho da fila com incerteza
+#define tam_fila(F) (tamanho_fila(F) + (rand() % 3)*2 - 1)		//Tamanho da fila com incerteza
+//#define tam_fila(F) ((int) (tamanho_fila(F) * (1 + rand()/RAND_MAX)))	//Tamanho da fila com incerteza
 
 void elitismo(int the_best, int* pop);
 void torneio2(int the_best, int* pop, float* fit);
@@ -21,12 +23,13 @@ void predacao(int the_best, int* pop, float* fit);
 int filas_vazias(int num_filas, FILA** filas);
 double fitness (int, double, double);
 
-int max_caixas;
+//Máx. de caixas e clientes possíveis
+int max_caixas, qte_clientes;
 
 int main(){
-	char ch;
+	char ch = 's';
 	int i, k, J, the_best, geracao;
-	int num_caixas, qte_clientes, num_clientes, num_filas;
+	int num_caixas, num_clientes, num_filas;
 	double tempo_max, tempo_media;
 	double* caixas;		//Tempos para finalizar o atendimento no caixa
 	FILA** filas;		//Filas de espera
@@ -124,22 +127,23 @@ int main(){
 		        //Caso o menor tempo seja do cliente a entrar, procura a menor fila (com incerteza)
 		        if (M == -1) {
 		            int K = 0;          //Marca da menor fila
+		            int tam_fila_i;
 		            
-					int tam_menor_fila = tamanho_fila(filas[0]);
+					int tam_menor_fila = tam_fila(filas[0]);
 		            
-		            for (i = 1; i < num_filas; i++)                     
-		                
-		                if (tamanho_fila(filas[i]) < tam_menor_fila) {
+		            for (i = 1; i < num_filas; i++) {                     
+		                tam_fila_i = tam_fila(filas[i]);
+		                if (tam_fila_i < tam_menor_fila) {
 		                    K = i;    
-		                    tam_menor_fila = tamanho_fila(filas[i]);
+		                    tam_menor_fila = tam_fila_i;
 		                }
 		                
 						//Duas filas vazias, mas uma com o caixa livre e a outra não
-						else if (tamanho_fila(filas[i]) == tam_menor_fila && caixas[i] == 0.0 && caixas[K] != 0.0) {
+						else if (tam_fila_i == tam_menor_fila && caixas[i] == 0.0 && caixas[K] != 0.0) {
 		                	K = i;
-		                    tam_menor_fila = tamanho_fila(filas[i]);
+		                    tam_menor_fila = tam_fila_i;
 		                }
-		                
+		            }
 					
 					//Cliente entra na menor fila
 		            if (enfileirar_fila(filas[K], cliente_entrada) == 1) {
@@ -198,10 +202,13 @@ int main(){
 		//Predação a cada TEMPO_PRED gerações
 		if(( geracao % TEMPO_PRED ) == 0) predacao(the_best, lojas, fit_loja);
 		
+		//Interromper evolução
+		if(kbhit() && getch() == 'q' || geracao % 10 == 0) {
+		    printf("\n\nContinuar evolucao (s/n)?");
+	    	fflush(stdin);
+			ch = getchar();
+		}
 		
-	    printf("\n\nContinuar evolucao (s/n)?");
-	    fflush(stdin);
-		ch = getchar();
 	} while (ch != 'n' && ch != 'N');
      
     return 0;
