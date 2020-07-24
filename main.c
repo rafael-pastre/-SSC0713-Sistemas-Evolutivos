@@ -2,7 +2,6 @@
 #include <conio.h>
 #include <stdlib.h>
 #include <time.h>
-//#include <math.h>
 #include <float.h>
 
 #include "Def.h"
@@ -10,12 +9,17 @@
 #include "Cliente.h"
 #include "Fila.h"
 
-#define TAM_POP 10
-#define TAX_MUT 0.25
-#define TEMPO_PRED 10
+#define TAM_POP 10			//Tamanho da população
+#define TAX_MUT 0.25		//Taxa de mutação inicial
+#define TEMPO_PRED 10		//Tempo para predação
+#define PLOTAR_DESEMPENHO	//Define se vai plotar gráficos
+#define GNUPLOT C:\\\"Program Files\"\\gnuplot\\bin\\gnuplot.exe	//Caminho para o gnuplot
 
-#define tam_fila(F) (tamanho_fila(F) + (rand() % 3)*2 - 1)		//Tamanho da fila com incerteza
-//#define tam_fila(F) ((int) (tamanho_fila(F) * (1 + rand()/RAND_MAX)))	//Tamanho da fila com incerteza
+//Tamanho da fila com incerteza
+#define tam_fila(F) (tamanho_fila(F) + (rand() % 3)*2 - 1)
+//#define tam_fila(F) ((int) (tamanho_fila(F) * (1 + rand()/RAND_MAX)))
+
+#define abrir_arq_escrita(f, arq) if ((f = fopen(arq,"wb")) == NULL) { perror("Imp. criar arquivo"); exit(0); }	//Macro para abrir arquivo para escrita
 
 void elitismo(int the_best, int* pop);
 void torneio2(int the_best, int* pop, float* fit);
@@ -23,24 +27,34 @@ void predacao(int the_best, int* pop, float* fit);
 int filas_vazias(int num_filas, FILA** filas);
 double fitness (int, double, double);
 
-//Máx. de caixas e clientes possíveis
-int max_caixas, qte_clientes;
+int max_caixas, qte_clientes;	//Máx. de caixas e clientes possíveis
+double tax_mut;					//Taxa de mutação variável
+
 
 int main(){
 	char ch = 's';
 	int i, k, J, the_best, geracao;
 	int num_caixas, num_clientes, num_filas;
-	double tempo_max, tempo_media;
+	double tempo_max, tempo_media, fit_anterior, d_fit, media;
 	double* caixas;		//Tempos para finalizar o atendimento no caixa
 	FILA** filas;		//Filas de espera
+
+	#ifdef PLOTAR_DESEMPENHO
+	FILE *melhor_arq, *media_arq;
+	abrir_arq_escrita(melhor_arq, "melhor.txt");
+	abrir_arq_escrita(media_arq, "media.txt");
+	#endif
 
 	//Lê a quantidade de clientes e máximo de caixas
 	printf("Insira a quantidade de clientes por dia (Maximo %d): ", QTE_MAX_CLIENTES);
     scanf("%d", &qte_clientes);
-    printf("\nInsira a quantidade máxima de caixas: ");
+    printf("\nInsira a quantidade maxima de caixas: ");
     scanf("%d", &max_caixas);
 
     reset_normal(time(NULL));     //Semente números aleatórios
+    
+    tax_mut = TAX_MUT;
+    fit_anterior = DBL_MIN;
     
     //Gera população de 10 lojas
     float fit_loja[TAM_POP];
@@ -66,7 +80,7 @@ int main(){
 		    filas = (FILA**) malloc(num_filas * sizeof(FILA*));   
 			
 	
-		    printf("\nLoja %d	Caixas: %d    Filas: %d   Clientes: %d\n", k, num_caixas, num_filas, qte_clientes);    //Imprime alguns parâmetros da simulação
+		    printf("\nLoja %d	Caixas: %d", (k + 1), num_caixas);    //Imprime alguns parâmetros da simulação
 		
 		    for (i = 0; i < num_caixas; i++)
 		        caixas[i] = 0.0;                    //Inicializa os caixas vazios
@@ -178,40 +192,75 @@ int main(){
 		    for (i = 0; i < num_filas; i++) apagar_fila(&filas[i]);      //Apaga as filas de espera
 		    
 		    fit_loja[k] = fitness(num_caixas, tempo_media, tempo_max);
-		    printf("Fitness = %lf\n", fit_loja[k]);
+		    printf("\n\t Fitness = %f\n", fit_loja[k]);
 		}//for população
 		
-		//Imprime The best
-		the_best = 0;
-		for (i = 1; i < TAM_POP; i++)
+		//Encontra The best e calcula média
+		the_best = 0; media = fit_loja[0];
+		for (i = 1; i < TAM_POP; i++) {
 			if (fit_loja[i] > fit_loja[the_best]) the_best = i;
+			media += fit_loja[i];
+		}
+		media /= TAM_POP;
 		
-		printf("\n\nThe best %da geracao: No caixas = %d, Fitness = %f", geracao, lojas[the_best], fit_loja[the_best]);
+		//Imprime The best e média
+		printf("\n\n%da geracao:\n", geracao);
+		printf("\tThe best : No caixas = %d, Fitness = %f\n", lojas[the_best], fit_loja[the_best]);
+		printf("\tFitness medio: %f\n", media);
+		printf("\tTaxa de mutacao = %lf\n", tax_mut);
 		
-		//Plotar desempenho the_best
+		//Salva desempenho the_best
+		#ifdef PLOTAR_DESEMPENHO
+		fprintf(melhor_arq, "%d \t %f \r\n", geracao, fit_loja[the_best]);
+		fprintf(media_arq, "%d \t %f \r\n", geracao, media);
+		#endif
 		
 		//APlica AG
 		//elitismo(the_best, lojas);
 		torneio2(the_best, lojas, fit_loja);
 		
-		/* Variar taxa de mutação
-			Diminuir taxa se fitness começar a cair
-			Aumentar taxa se fitness estiver estabilizado
+		/* Varia taxa de mutação
+			 Diminue taxa se fitness começar a cair
+			 Aumenta taxa se fitness estiver estabilizado
 		*/
+		d_fit = fit_loja[the_best] - fit_anterior;
+		if (d_fit < -0.5) tax_mut *= 0.9;
+		else if (d_fit < 0.01 && d_fit > -0.01) tax_mut *= 1.05;
+		fit_anterior = fit_loja[the_best];
+		
+		//Genocídio
+		if (tax_mut >= 0.5) {
+			for (k = 0; k < TAM_POP; k++)  {
+				if (k != the_best) lojas[k] = rand() % (max_caixas + 1);
+				if (lojas[k] == 0 ) lojas[k] = 1;
+			}
+			tax_mut = TAX_MUT;
+		}
 		
 		//Predação a cada TEMPO_PRED gerações
 		if(( geracao % TEMPO_PRED ) == 0) predacao(the_best, lojas, fit_loja);
 		
 		//Interromper evolução
 		if(kbhit() && getch() == 'q' || geracao % 10 == 0) {
-		    printf("\n\nContinuar evolucao (s/n)?");
+		    
+		    //Plotar desempenho the_best
+			#ifdef PLOTAR_DESEMPENHO
+			fflush(melhor_arq); fflush(media_arq);
+			system("GNUPLOT -p -e \"plot \'melhor.txt\' with lines, \'media.txt\' with lines\"\n");
+			#endif
+		    
+			printf("\n\nContinuar evolucao (s/n)?");
 	    	fflush(stdin);
 			ch = getchar();
 		}
 		
 	} while (ch != 'n' && ch != 'N');
-     
-    return 0;
+    
+	#ifdef PLOTAR_DESEMPENHO
+    fclose(melhor_arq); fclose(media_arq);
+    #endif
+	
+	return 0;
 }
 
 //Verifica se as filas estão vazias
@@ -224,7 +273,7 @@ int filas_vazias(int num_filas, FILA** filas){
 
 //Avalia desempenho
 double fitness (int num_caixas, double tma, double tmax) {
-	return (-tma) + (1.0/num_caixas) - tmax; 
+	return (-0.5 * tma) + (0.3/num_caixas) - (0.1 * tmax); 
 }
 
 /* ------------------------ Funções AG ------------------------ */
@@ -237,7 +286,7 @@ void elitismo(int the_best, int* pop) {
         pop[i] = (pop[i] + pop[the_best]) / 2.0;
 
         // Mutação
-        pop[i] = pop[i] + ((rand() % 10) - 5) * TAX_MUT;
+        pop[i] = pop[i] + ((rand() % 10) - 5) * tax_mut;
     }
 }
 
@@ -272,7 +321,7 @@ void torneio2(int the_best, int* pop, float* fit) {
         pop_aux[i] = (pop[pai1] + pop[pai2]) / 2.0;
 
         // Mutação
-        pop_aux[i] = pop_aux[i] + ((rand() % 10) - 5) * TAX_MUT;
+        pop_aux[i] = pop_aux[i] + ((rand() % 10) - 5) * tax_mut;
     }
     
     //Copia o População auxiliar para população principal
