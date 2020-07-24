@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <conio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <float.h>
@@ -13,7 +12,7 @@
 #define TAX_MUT 0.25		//Taxa de mutação inicial
 #define TEMPO_PRED 10		//Tempo para predação
 #define PLOTAR_DESEMPENHO	//Define se vai plotar gráficos
-#define GNUPLOT C:\\\"Program Files\"\\gnuplot\\bin\\gnuplot.exe	//Caminho para o gnuplot
+#define gnuplot C:\\\"Program Files\"\\gnuplot\\bin\\gnuplot.exe	//Caminho para o gnuplot
 
 //Tamanho da fila com incerteza
 #define tam_fila(F) (tamanho_fila(F) + (rand() % 3)*2 - 1)
@@ -241,12 +240,12 @@ int main(){
 		if(( geracao % TEMPO_PRED ) == 0) predacao(the_best, lojas, fit_loja);
 		
 		//Interromper evolução
-		if(kbhit() && getch() == 'q' || geracao % 10 == 0) {
+		if(geracao % 10 == 0) {
 		    
 		    //Plotar desempenho the_best
 			#ifdef PLOTAR_DESEMPENHO
 			fflush(melhor_arq); fflush(media_arq);
-			system("GNUPLOT -p -e \"plot \'melhor.txt\' with lines, \'media.txt\' with lines\"\n");
+			system("gnuplot -p -e \"plot \'melhor.txt\' with lines, \'media.txt\' with lines\"\n");
 			#endif
 		    
 			printf("\n\nContinuar evolucao (s/n)?");
