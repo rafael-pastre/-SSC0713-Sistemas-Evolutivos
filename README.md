@@ -15,6 +15,7 @@ Para simulação, foram usadas uma estrutura CLIENTE para representar o cliente 
 A simulação ocorre enquanto houver clientes para serem atendidos. Cada loop da simulação tem um tempo transcorrido, o qual é o menor entre os tempos de cada caixa a ser liberarado e o do cliente a chegar(ainda não chegou à loja e está para entrar em uma fila quando chegar). De acordo com o menor tempo se toma uma ação: no caso do cliente a chegar, ele entra na fila que lhe parecer menor (considera incerteza na escolha da menor fila); no caso de um caixa, chama o próximo da fila. O tempo transcorrido em cada loop é somado ao tempo de espera de cada cliente na fila e decrementado dos tempos de caixa e do cliente a chegar.
 
 O tipo CLIENTE possui três valores que representam tempo: chegada(usado como contador regressivo para o cliente entrar na fila), atendimento (valor que é passado ao caixa quando é atendido e representa quanto tempo demoraria até o caixa estar livre de novo) e espera (tempo que o cliente aguarda na fila).
+
 Ao final da simulação, informa-se o tempo médio e o máximo de espera nas filas.
 Parâmetros como quantidade de clientes e números máximo de caixas são inseridos pelo usuário antes do início da simulação. Outros parâmetros como quantidade máxima de clientes na fila, tempo de chegada, desvio do tempo de chegada, etc. podem ser alterados no código do arquivo *Def.h*, configurando a situação a ser otimizada. Abaixo segue o algoritmo para a simulação:
 - Enquanto houver clientes a serem criados ou nas filas:
