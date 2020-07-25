@@ -1,6 +1,6 @@
 # Filas Evolutivas
 O projeto consiste em encontrar a melhor disposição de caixas para uma loja ou supermecado, mas também pode ser usado para catracas de metrô, estádios ou qualquer outro tipo de situação na qual diversos pontos de atendimento sejam utilizados massivamente. Para tanto, são aplicados algoritmos evolutivos.
-[Vídeo demonstrativo](https://www.google.com)
+[Vídeo demonstrativo](https://drive.google.com/file/d/1Ajq8PMBiOfxP_hV6EZXo_-gltucSy7rX/view?usp=sharing)
 
 ### Algoritmo evolutivo
 É criada uma população de lojas com as quantidades de caixas definidas randomicamente. Essa  população é submetida a simulação de filas para obter seu desempenho (tempo médio de atendimento e tempo máximo). Cada loja é avaliada considerando o desempenho na simulação e os custos de manutenção dos caixas. Então, aplica-se torneio de 2 para encontrar a melhor disposição através das gerações.
