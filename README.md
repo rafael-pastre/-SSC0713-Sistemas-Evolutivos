@@ -3,7 +3,7 @@ O projeto consiste em encontrar a melhor disposição de caixas para uma loja ou
 [Vídeo demonstrativo](https://drive.google.com/file/d/1Ajq8PMBiOfxP_hV6EZXo_-gltucSy7rX/view?usp=sharing)
 
 ### Algoritmo evolutivo
-É criada uma população de lojas com as quantidades de caixas definidas randomicamente. Essa  população é submetida a simulação de filas para obter seu desempenho (tempo médio de atendimento e tempo máximo). Cada loja é avaliada considerando o desempenho na simulação e os custos de manutenção dos caixas. Então, aplica-se torneio de 2 para encontrar a melhor disposição através das gerações.
+É criada uma população de lojas com as quantidades de caixas definidas randomicamente. Essa  população é submetida a simulação de filas para obter seu desempenho (tempo médio de atendimento e tempo máximo). Cada loja é avaliada considerando o desempenho em 10 simulações e os custos de manutenção dos caixas. Então, aplica-se torneio de 2 para encontrar a melhor disposição através das gerações.
 
 Foi aplicada predação para aumentar a diversidade a cada N gerações. A taxa de mutação é variável, diminui quando a avaliação começa a cair ou aumenta quando esta estabiliza. Quando a taxa de mutação ultrapassa certo valor, ocorre um genocídio, sendo que só a melhor loja é preservada.
 As avaliações da melhor loja e da média das lojas podem ser impressas em um gráfico com o GNUPLOT.
