@@ -32,7 +32,7 @@ double tax_mut;					//Taxa de mutação variável
 
 int main(){
 	char ch = 's';
-	int i, k, J, the_best, geracao;
+	int i, x, k, J, the_best, geracao;
 	int num_caixas, num_clientes, num_filas;
 	double tempo_max, tempo_media, fit_anterior, d_fit, media;
 	double* caixas;		//Tempos para finalizar o atendimento no caixa
@@ -57,6 +57,9 @@ int main(){
     
     //Gera população de 10 lojas
     float fit_loja[TAM_POP];
+    float fits_10_loja[TAM_POP][10];		//Guarda fitness de 10 simulações para um indivíduo
+    double tempos_maximos[10];				//Tempos máximos de cada simulação
+    double tmas[10];						//TMA de cada simulação
     int lojas[TAM_POP];
     geracao = 0;
     for (k = 0; k < TAM_POP; k++)  {
@@ -69,129 +72,160 @@ int main(){
 	    geracao++;		//Conta geração
 	    
 		for (k = 0; k < TAM_POP; k++) {
-		    tempo_max = 0.0;       //Tempo máximo de espera
-		    tempo_media = 0.0;     //Tempo médio de atendimento
-		
-		    num_clientes = qte_clientes;		//Conta quantos clientes faltam para serem atendidos
-		    num_filas =  num_caixas = lojas[k];
-		    
-			caixas = (double*) malloc(num_caixas * sizeof(double));          
-		    filas = (FILA**) malloc(num_filas * sizeof(FILA*));   
+			printf("\nLoja %d	Caixas: %d", (k + 1), num_caixas);    //Imprime alguns parâmetros da simulação
 			
-	
-		    printf("\nLoja %d	Caixas: %d", (k + 1), num_caixas);    //Imprime alguns parâmetros da simulação
-		
-		    for (i = 0; i < num_caixas; i++)
-		        caixas[i] = 0.0;                    //Inicializa os caixas vazios
-		
-		    for (i = 0; i < num_filas; i++)
-		        filas[i] = criar_fila();            //Cria as filas de esperas
-		
-		    CLIENTE* cliente_entrada = NULL;        //Cliente que está para entrar na fila
-		    CLIENTE* cliente_atendimento = NULL;    //Cliente que será atendido no caixa
-		
-			//A simulação ocorre enquanto houver clientes a serem atendidos
-		    while (num_clientes > 0 || !filas_vazias(num_filas, filas)) {
-		
-		        //Gera novo cliente que espera seu tempo de chegada para entrar na fila
-		        if (num_clientes > 0 && cliente_entrada == NULL) {
-		            cliente_entrada = criar_cliente();  
-		            if (cliente_entrada != NULL){           
-		                //printf("\n\nCriou cliente esperando para entrar"); imprimir_cliente(cliente_entrada);  //Imprime novo cliente
-		                num_clientes--;
-		            }
-		        }
-		
-		        //Verifica o menor tempo a ser transcorrido em uma iteração
-		        int M = -1;     //A princípio, o menor tempo é do cliente a chegar
-		        double menor_tempo = (cliente_entrada != NULL) ? cliente_entrada->tempo_chegada : DBL_MAX;    //Define o menor tempo como o do cliente se existir
-		        
-		        //Verifica se algum caixa tem tempo de espera menor
-				for (i = 0; i < num_caixas; i++){
-		            J = (num_filas == 1) ? 0 : i;    //J é o índice de fila, no caso de fila única será sempre 0
-		            					
-					//Caixa possui o menor tempo, mas não está livre e sem fila
-					if (caixas[i] <= menor_tempo && !(vazia_fila(filas[J]) && caixas[i] == 0.0)){
-		                M = i;
-		                menor_tempo = caixas[i];
-		            }
-		        }
-		        
-		        
-				/*
-		        //Imprime o menor tempo a ser transcorrido e sua origem
-		        if(M < 0)   printf("\n\nMenor tempo: Cliente a entrar : %lf", menor_tempo);
-		        else    printf("\n\nMenor tempo: Caixa %d : %lf", M, menor_tempo);
-				*/
+			//Executa 10 simulações para cada indivídio em cada geração
+			for (x = 0; x < 10; x++) {
+			    tempo_max = 0.0;       //Tempo máximo de espera
+			    tempo_media = 0.0;     //Tempo médio de atendimento
+			
+			    num_clientes = qte_clientes;		//Conta quantos clientes faltam para serem atendidos
+			    num_filas =  num_caixas = lojas[k];
+			    
+				caixas = (double*) malloc(num_caixas * sizeof(double));          
+			    filas = (FILA**) malloc(num_filas * sizeof(FILA*));   
+			
+			    for (i = 0; i < num_caixas; i++)
+			        caixas[i] = 0.0;                    //Inicializa os caixas vazios
+			
+			    for (i = 0; i < num_filas; i++)
+			        filas[i] = criar_fila();            //Cria as filas de esperas
+			
+			    CLIENTE* cliente_entrada = NULL;        //Cliente que está para entrar na fila
+			    CLIENTE* cliente_atendimento = NULL;    //Cliente que será atendido no caixa
+			
+				//A simulação ocorre enquanto houver clientes a serem atendidos
+			    while (num_clientes > 0 || !filas_vazias(num_filas, filas)) {
+			
+			        //Gera novo cliente que espera seu tempo de chegada para entrar na fila
+			        if (num_clientes > 0 && cliente_entrada == NULL) {
+			            cliente_entrada = criar_cliente();  
+			            if (cliente_entrada != NULL){           
+			                //printf("\n\nCriou cliente esperando para entrar"); imprimir_cliente(cliente_entrada);  //Imprime novo cliente
+			                num_clientes--;
+			            }
+			        }
+			
+			        //Verifica o menor tempo a ser transcorrido em uma iteração
+			        int M = -1;     //A princípio, o menor tempo é do cliente a chegar
+			        double menor_tempo = (cliente_entrada != NULL) ? cliente_entrada->tempo_chegada : DBL_MAX;    //Define o menor tempo como o do cliente se existir
+			        
+			        //Verifica se algum caixa tem tempo de espera menor
+					for (i = 0; i < num_caixas; i++){
+			            J = (num_filas == 1) ? 0 : i;    //J é o índice de fila, no caso de fila única será sempre 0
+			            					
+						//Caixa possui o menor tempo, mas não está livre e sem fila
+						if (caixas[i] <= menor_tempo && !(vazia_fila(filas[J]) && caixas[i] == 0.0)){
+			                M = i;
+			                menor_tempo = caixas[i];
+			            }
+			        }
+			        
+			        
+					/*
+			        //Imprime o menor tempo a ser transcorrido e sua origem
+			        if(M < 0)   printf("\n\nMenor tempo: Cliente a entrar : %lf", menor_tempo);
+			        else    printf("\n\nMenor tempo: Caixa %d : %lf", M, menor_tempo);
+					*/
+					
+									
+					//Soma e decrementa menor_tempo
+			        if(menor_tempo > 0){ 
+			            //Soma o menor_tempo aos tempos de espera dos clientes
+			            for (i = 0; i < num_filas; i++)
+			                somar_tempo_fila(menor_tempo, filas[i]);
+			
+			            //Decrementa o menor_tempo aos tempos do caixa e de chegada do cliente_entrada
+			            if (cliente_entrada != NULL) cliente_entrada->tempo_chegada -= menor_tempo;
+			            for (i = 0; i < num_caixas; i++)
+			               if (caixas[i] != 0) caixas[i] -= menor_tempo;
+			        }
+			
+			        //Caso o menor tempo seja do cliente a entrar, procura a menor fila (com incerteza)
+			        if (M == -1) {
+			            int K = 0;          //Marca da menor fila
+			            int tam_fila_i;
+			            
+						int tam_menor_fila = tam_fila(filas[0]);
+			            
+			            for (i = 1; i < num_filas; i++) {                     
+			                tam_fila_i = tam_fila(filas[i]);
+			                if (tam_fila_i < tam_menor_fila) {
+			                    K = i;    
+			                    tam_menor_fila = tam_fila_i;
+			                }
+			                
+							//Duas filas vazias, mas uma com o caixa livre e a outra não
+							else if (tam_fila_i == tam_menor_fila && caixas[i] == 0.0 && caixas[K] != 0.0) {
+			                	K = i;
+			                    tam_menor_fila = tam_fila_i;
+			                }
+			            }
+						
+						//Cliente entra na menor fila
+			            if (enfileirar_fila(filas[K], cliente_entrada) == 1) {
+			                //printf("\n\nCliente entrou na fila");  imprimir_cliente(cliente_entrada);                  //Imprime cliente que entrou na fila
+			                cliente_entrada = NULL;
+			            }
+			        }
+			        
+			        //Caso o menor tempo seja de um dos caixas
+			        else {
+			            J = (num_filas == 1) ? 0 : M;                        //J marca a fila do cliente
+			            cliente_atendimento = desenfileirar_fila(filas[J]);  //Chama o primeiro cliente da fila
+						
+						//Caso houvesse cliente na fila
+			            if (cliente_atendimento != NULL) {
+			                //printf("\n\nCliente saiu da fila"); imprimir_cliente(cliente_atendimento);              //Imprime cliente que saiu da fila
+			                tempo_media += cliente_atendimento->tempo_espera;   //Acrescenta tempo de espera na fila ao tempo médio
+			                
+							//Verifica se o tempo de espera do cliente é o maior de todos
+							if (cliente_atendimento->tempo_espera > tempo_max) tempo_max = cliente_atendimento->tempo_espera;
+			                    
+			                caixas[M] = cliente_atendimento->tempo_servico;     //Tempo que o caixa levará para ficar livre novamente
+			                apagar_cliente(&cliente_atendimento);
+			            }
+			        }
+			    }
+						
+				tempo_media /= qte_clientes;
 				
-								
-				//Soma e decrementa menor_tempo
-		        if(menor_tempo > 0){ 
-		            //Soma o menor_tempo aos tempos de espera dos clientes
-		            for (i = 0; i < num_filas; i++)
-		                somar_tempo_fila(menor_tempo, filas[i]);
-		
-		            //Decrementa o menor_tempo aos tempos do caixa e de chegada do cliente_entrada
-		            if (cliente_entrada != NULL) cliente_entrada->tempo_chegada -= menor_tempo;
-		            for (i = 0; i < num_caixas; i++)
-		               if (caixas[i] != 0) caixas[i] -= menor_tempo;
-		        }
-		
-		        //Caso o menor tempo seja do cliente a entrar, procura a menor fila (com incerteza)
-		        if (M == -1) {
-		            int K = 0;          //Marca da menor fila
-		            int tam_fila_i;
-		            
-					int tam_menor_fila = tam_fila(filas[0]);
-		            
-		            for (i = 1; i < num_filas; i++) {                     
-		                tam_fila_i = tam_fila(filas[i]);
-		                if (tam_fila_i < tam_menor_fila) {
-		                    K = i;    
-		                    tam_menor_fila = tam_fila_i;
-		                }
-		                
-						//Duas filas vazias, mas uma com o caixa livre e a outra não
-						else if (tam_fila_i == tam_menor_fila && caixas[i] == 0.0 && caixas[K] != 0.0) {
-		                	K = i;
-		                    tam_menor_fila = tam_fila_i;
-		                }
-		            }
-					
-					//Cliente entra na menor fila
-		            if (enfileirar_fila(filas[K], cliente_entrada) == 1) {
-		                //printf("\n\nCliente entrou na fila");  imprimir_cliente(cliente_entrada);                  //Imprime cliente que entrou na fila
-		                cliente_entrada = NULL;
-		            }
-		        }
-		        
-		        //Caso o menor tempo seja de um dos caixas
-		        else {
-		            J = (num_filas == 1) ? 0 : M;                        //J marca a fila do cliente
-		            cliente_atendimento = desenfileirar_fila(filas[J]);  //Chama o primeiro cliente da fila
-					
-					//Caso houvesse cliente na fila
-		            if (cliente_atendimento != NULL) {
-		                //printf("\n\nCliente saiu da fila"); imprimir_cliente(cliente_atendimento);              //Imprime cliente que saiu da fila
-		                tempo_media += cliente_atendimento->tempo_espera;   //Acrescenta tempo de espera na fila ao tempo médio
-		                
-						//Verifica se o tempo de espera do cliente é o maior de todos
-						if (cliente_atendimento->tempo_espera > tempo_max) tempo_max = cliente_atendimento->tempo_espera;
-		                    
-		                caixas[M] = cliente_atendimento->tempo_servico;     //Tempo que o caixa levará para ficar livre novamente
-		                apagar_cliente(&cliente_atendimento);
-		            }
-		        }
-		    }
-	
-			tempo_media /= qte_clientes;
-		    printf("\n\t Tempo media: %lf", tempo_media);    //Imprime o tempo média de espera na fila
-		    printf("\n\t Tempo maximo: %lf", tempo_max);     //Imprime o tempo máximo de espera na fila
-		
-		    for (i = 0; i < num_filas; i++) apagar_fila(&filas[i]);      //Apaga as filas de espera
+				tmas[x] = tempo_media;
+				tempos_maximos[x] = tempo_max;
+			
+				fits_10_loja[k][x] = fitness(num_caixas, tempo_media, tempo_max);
+				
+				for (i = 0; i < num_filas; i++) apagar_fila(&filas[i]);      //Apaga as filas de espera
+				
+			}//For 10 simulações para cada indivíduo
 		    
-		    fit_loja[k] = fitness(num_caixas, tempo_media, tempo_max);
-		    printf("\n\t Fitness = %f\n", fit_loja[k]);
+		    //Descarta melhor e pior fitness e tira média dos restantes
+		    
+			//Busca pior e melhor fitness
+			int mini, maxi;
+			maxi = mini = 0;
+			for (int i = 1; i <= 10; i++) {
+		        if (fits_10_loja[k][i] < fits_10_loja[k][mini]) mini = i;
+				if (fits_10_loja[k][i] > fits_10_loja[k][maxi]) maxi = i;
+		    }
+		    
+		    //Tira média
+		    fit_loja[k] = tempo_media = tempo_max = 0.0;
+		    for (int i = 0; i <= 10; i++) {
+		        if (i != mini && i != maxi) {
+					fit_loja[k] += fits_10_loja[k][i];		//Fitness
+					tempo_media += tmas[i];
+					tempo_max   += tempos_maximos[i];
+				}
+		    }
+		    fit_loja[k] /= 8;		//Divide e salva fitness médio
+		    tempo_media /= 8;
+		    tempo_max /= 8;   
+			
+			//Imprime médias de tempos e fitness
+		    printf("\n\t Tempo medio: %lf", tempo_media);
+		    printf("\n\t Tempo maximo: %lf", tempo_max);
+			printf("\n\t Fitness = %f\n", fit_loja[k]);
 		}//for população
 		
 		//Encontra The best e calcula média
